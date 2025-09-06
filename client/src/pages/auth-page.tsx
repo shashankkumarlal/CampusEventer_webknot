@@ -254,9 +254,9 @@ export default function AuthPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {collegesLoading ? (
-                              <SelectItem value="" disabled>Loading...</SelectItem>
+                              <SelectItem value="loading" disabled>Loading...</SelectItem>
                             ) : colleges.length === 0 ? (
-                              <SelectItem value="" disabled>No colleges available</SelectItem>
+                              <SelectItem value="no-colleges" disabled>No colleges available</SelectItem>
                             ) : (
                               colleges.map((college) => (
                                 <SelectItem key={college.id} value={college.id}>
