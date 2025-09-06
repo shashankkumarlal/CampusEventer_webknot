@@ -41,7 +41,7 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
 
-  const { data: colleges = [] } = useQuery<College[]>({
+  const { data: colleges = [], isLoading: collegesLoading, error: collegesError } = useQuery<College[]>({
     queryKey: ["/api/colleges"],
   });
 
@@ -250,19 +250,30 @@ export default function AuthPage() {
                         <Label htmlFor="register-college">College</Label>
                         <Select onValueChange={(value) => registerForm.setValue("collegeId", value)}>
                           <SelectTrigger className="bg-input border-border" data-testid="select-register-college">
-                            <SelectValue placeholder="Select college" />
+                            <SelectValue placeholder={collegesLoading ? "Loading colleges..." : colleges.length === 0 ? "No colleges available" : "Select college"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {colleges.map((college) => (
-                              <SelectItem key={college.id} value={college.id}>
-                                {college.name}
-                              </SelectItem>
-                            ))}
+                            {collegesLoading ? (
+                              <SelectItem value="" disabled>Loading...</SelectItem>
+                            ) : colleges.length === 0 ? (
+                              <SelectItem value="" disabled>No colleges available</SelectItem>
+                            ) : (
+                              colleges.map((college) => (
+                                <SelectItem key={college.id} value={college.id}>
+                                  {college.name}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                         {registerForm.formState.errors.collegeId && (
                           <p className="text-destructive text-sm mt-1">
                             {registerForm.formState.errors.collegeId.message}
+                          </p>
+                        )}
+                        {collegesError && (
+                          <p className="text-destructive text-sm mt-1">
+                            Failed to load colleges. Please refresh the page.
                           </p>
                         )}
                       </div>
