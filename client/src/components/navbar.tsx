@@ -33,7 +33,6 @@ export default function Navbar() {
 
   const navItems = [
     { label: "Events", href: "/", roles: ["student", "admin"] },
-    { label: "My Dashboard", href: user?.role === "admin" ? "/admin-dashboard" : "/student-dashboard", roles: ["student", "admin"] },
     { label: "Admin Panel", href: "/admin-dashboard", roles: ["admin"] },
   ];
 
@@ -143,15 +142,6 @@ export default function Navbar() {
                 >
                   <User className="mr-2 h-4 w-4" />
                   <span>Events</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem 
-                  onClick={() => setLocation(user.role === "admin" ? "/admin-dashboard" : "/student-dashboard")}
-                  className="cursor-pointer"
-                  data-testid="menu-dashboard"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
                 </DropdownMenuItem>
                 
                 <DropdownMenuSeparator />
