@@ -23,7 +23,7 @@ export default function HomePage() {
   const [sortBy, setSortBy] = useState("date");
 
   const { data: events = [], isLoading } = useQuery<(Event & { registrationCount: number })[]>({
-    queryKey: ["/api/events", { type: selectedType, search: searchTerm }],
+    queryKey: ["/api/events"],
   });
 
   const filteredEvents = events.filter(event => {
