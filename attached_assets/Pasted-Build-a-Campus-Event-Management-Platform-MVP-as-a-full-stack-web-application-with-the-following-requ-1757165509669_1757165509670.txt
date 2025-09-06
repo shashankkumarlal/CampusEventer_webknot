@@ -1,0 +1,241 @@
+Build a Campus Event Management Platform MVP as a full-stack web application with the following requirements:
+
+🎯 Core Requirements
+👥 User Roles & Security
+
+Student (participant) and Admin (college staff) roles.
+
+Secure role-based authentication (JWT).
+
+Admin login with MFA (multi-factor).
+
+Input validation everywhere.
+
+Prevent duplicate registrations & fraudulent check-ins.
+
+💻 Frontend (React + Tailwind + shadcn/ui + Framer Motion)
+
+Landing Page
+
+Show upcoming events with filters (hackathon, workshop, fest, seminar).
+
+Search by name/date.
+
+Event cards with name, type, date, and college.
+
+Event Details Page
+
+Show event info (title, description, date, time, location, organizer).
+
+Registration count + max capacity.
+
+Register button → disabled if full/canceled.
+
+Student Registration Form
+
+Pre-filled with student info.
+
+Real-time duplicate/error validation.
+
+Success animation on registration.
+
+Attendance Page
+
+For admins: list of registered students with attendance checkboxes.
+
+For students: QR code/self check-in option.
+
+Dynamic status updates with animations.
+
+Feedback Page
+
+After event: allow rating (1–5 stars) + optional comments.
+
+Progress bar + confirmation animation.
+
+Admin Dashboard
+
+Reports:
+
+Event popularity charts 📊
+
+Student participation tables 📑
+
+Top 3 active students 🏆
+
+Filters: event type + date.
+
+Interactive sorting, loading states.
+
+Auth Screens
+
+Login, forgot password, reset password.
+
+MFA for admin login.
+
+Smooth form validation + animations.
+
+Notifications & Alerts
+
+Toasts for success/failure.
+
+Real-time banners for event status updates.
+
+⚙️ Backend (Node.js + Express)
+
+Event CRUD APIs (Admin only).
+
+Student Registration API (prevents duplicates).
+
+Attendance API (manual + QR/self check-in).
+
+Feedback API (ratings + comments).
+
+Reports APIs
+
+Event popularity.
+
+Student participation.
+
+Top active students.
+
+Filtering support (type/date).
+
+Secure authentication & authorization middleware.
+
+Input validation layer.
+
+🗄️ Database (PostgreSQL preferred, SQLite fallback)
+
+Schema should include:
+
+Colleges (id, name, location).
+
+Students (id, name, email, college_id, password_hash).
+
+Events (id, title, type, date, time, location, organizer, max_capacity, status, college_id).
+
+Registrations (id, event_id, student_id, timestamp).
+
+Attendance (id, event_id, student_id, checkin_method, timestamp).
+
+Feedback (id, event_id, student_id, rating, comment, timestamp).
+
+Indexes + FKs for scalability (~50 colleges × 500 students each).
+
+🤖 AI Agents Integration (as modular services/microservices)
+🎓 Student-Facing AI Agents
+
+Event Recommendation Agent → Suggest personalized events based on attendance + interests.
+
+Smart Chatbot/Event Assistant → FAQ bot for registration, event info, and navigation.
+
+Peer Connection Agent → Suggest similar-interest attendees for networking.
+
+🏫 Admin-Facing AI Agents
+
+Event Popularity Predictor → Predict registration trends pre-launch.
+
+Attendance & Dropout Analyzer → Spot attendance gaps + suggest improvements.
+
+Feedback Sentiment Agent → Summarize ratings/comments into sentiment insights.
+
+Fraud Detection Agent → Detect duplicate/fake registrations or multiple check-ins.
+
+📊 Insights AI Agents
+
+Auto-Report Generator → Summarize reports with charts (top students, popular events).
+
+Event ROI Analyzer → Correlate participation + feedback + costs for event success.
+
+🛠️ Technical & UX Requirements
+
+Frontend: React + Tailwind + shadcn/ui + Framer Motion.
+
+Backend: Node.js + Express with RESTful API structure.
+
+Database: PostgreSQL (with Prisma ORM).
+
+AI Agents: Built as modular microservices (placeholders for integration with OpenAI/Gemini/Claude).
+
+Accessibility: WCAG compliance.
+
+Responsive: Optimized for web + mobile.
+
+Performance: Indexed queries, caching for reports.
+
+Animations: Smooth UX transitions + interactive states.
+
+📦 Deliverables
+
+Modular, clean frontend + backend + DB codebase.
+
+AI agents integrated as microservices with placeholder API calls.
+
+Comments in all code files explaining functionality.
+
+README.md (template only) with setup + run instructions (to be filled manually).
+
+👉 Build this as a complete, functional MVP with working frontend, backend, database, authentication, reporting, and AI agent integration points. Keep it clean, modern, and easy to extend.
+
+THE UI SHOULD LOOK SLEEK AND MODERN A BIT DARK THEMED SCIFY TYPES 
+
+Build me a full-stack Campus Event Management Platform MVP.
+
+🎨 Frontend (React + TailwindCSS + TypeScript):
+- Landing page with event discovery (cards, filters, search bar).
+- Role-based authentication mock (Student/Admin).
+- Student dashboard:
+   - View events
+   - Register/unregister
+   - See my registrations
+   - Submit feedback (rating + comment)
+- Admin dashboard:
+   - Create/Edit/Delete events
+   - View all students & registrations
+   - Attendance marking (checkbox)
+   - Feedback view
+   - Reports page with interactive charts (event popularity, top students, avg ratings).
+- Notifications icon (dummy for now).
+- Mobile-first, clean UI with gradients + Framer Motion animations.
+
+🗄️ Backend (Node.js + Express + Prisma + PostgreSQL):
+- Prisma models: Student, Event, Registration, Feedback
+- CRUD APIs for all models
+- Endpoints:
+   - POST /auth/register (mock user registration)
+   - POST /auth/login (mock login)
+   - GET /events
+   - POST /events
+   - PUT /events/:id
+   - DELETE /events/:id
+   - POST /events/:id/register
+   - POST /events/:id/attendance
+   - POST /events/:id/feedback
+   - GET /reports/popularity
+   - GET /reports/top-students
+   - GET /reports/feedback
+- Include dummy seed data for quick testing.
+
+🔐 Auth:
+- Role-based access (admin vs student).
+- Use JWT for mock authentication (hardcoded secret is fine for MVP).
+
+📊 Reports:
+- Event popularity → count registrations per event.
+- Top students → attendance % leaderboard.
+- Feedback analysis → average rating per event.
+
+🚀 Deliverables:
+- Fully integrated frontend + backend.
+- Working CRUD flows (Events, Students, Registrations, Feedback).
+- Dashboards with charts (Recharts or Chart.js).
+- Buttons & icons wired up (no dummy UI).
+- Mobile responsive design.
+
+Please scaffold the project so everything connects correctly: 
+- Frontend (React + Tailwind)
+- Backend (Express + Prisma + Postgres)
+- Role-based dashboards
+- CRUD APIs
+- Reports integration
