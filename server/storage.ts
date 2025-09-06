@@ -1,5 +1,5 @@
 import { 
-  users, colleges, events, registrations, attendance, feedback,
+  users, colleges, events, registrations, attendance as attendanceTable, feedback,
   type User, type InsertUser, type College, type InsertCollege,
   type Event, type InsertEvent, type Registration, type InsertRegistration,
   type Attendance, type InsertAttendance, type Feedback, type InsertFeedback
@@ -102,14 +102,15 @@ export class DatabaseStorage implements IStorage {
 
   // Event methods
   async getEvents(filters?: { type?: string; search?: string; date?: string }): Promise<Event[]> {
-    let query = db.select().from(events);
+    // Build conditions array
+    const conditions = [];
 
     if (filters?.type) {
-      query = query.where(eq(events.type, filters.type as any));
+      conditions.push(eq(events.type, filters.type as any));
     }
 
     if (filters?.search) {
-      query = query.where(
+      conditions.push(
         sql`${events.title} ILIKE ${`%${filters.search}%`} OR ${events.description} ILIKE ${`%${filters.search}%`}`
       );
     }
@@ -119,7 +120,7 @@ export class DatabaseStorage implements IStorage {
       const nextDay = new Date(targetDate);
       nextDay.setDate(nextDay.getDate() + 1);
       
-      query = query.where(
+      conditions.push(
         and(
           gte(events.date, targetDate),
           lte(events.date, nextDay)
@@ -127,7 +128,14 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    return await query.orderBy(events.date);
+    // Build query
+    if (conditions.length === 0) {
+      return await db.select().from(events).orderBy(events.date);
+    } else if (conditions.length === 1) {
+      return await db.select().from(events).where(conditions[0]).orderBy(events.date);
+    } else {
+      return await db.select().from(events).where(and(...conditions)).orderBy(events.date);
+    }
   }
 
   async getEvent(id: string): Promise<Event | undefined> {
@@ -224,16 +232,16 @@ export class DatabaseStorage implements IStorage {
 
   // Attendance methods
   async getAttendance(eventId: string, studentId: string): Promise<Attendance | undefined> {
-    const [attendance] = await db
+    const [attendanceRecord] = await db
       .select()
-      .from(attendance)
-      .where(and(eq(attendance.eventId, eventId), eq(attendance.studentId, studentId)));
-    return attendance || undefined;
+      .from(attendanceTable)
+      .where(and(eq(attendanceTable.eventId, eventId), eq(attendanceTable.studentId, studentId)));
+    return attendanceRecord || undefined;
   }
 
   async createAttendance(attendanceRecord: InsertAttendance): Promise<Attendance> {
     const [newAttendance] = await db
-      .insert(attendance)
+      .insert(attendanceTable)
       .values(attendanceRecord)
       .returning();
     return newAttendance;
@@ -242,32 +250,32 @@ export class DatabaseStorage implements IStorage {
   async getAttendanceByEvent(eventId: string): Promise<(Attendance & { student: User })[]> {
     return await db
       .select({
-        id: attendance.id,
-        eventId: attendance.eventId,
-        studentId: attendance.studentId,
-        checkinMethod: attendance.checkinMethod,
-        checkedInAt: attendance.checkedInAt,
+        id: attendanceTable.id,
+        eventId: attendanceTable.eventId,
+        studentId: attendanceTable.studentId,
+        checkinMethod: attendanceTable.checkinMethod,
+        checkedInAt: attendanceTable.checkedInAt,
         student: users,
       })
-      .from(attendance)
-      .innerJoin(users, eq(attendance.studentId, users.id))
-      .where(eq(attendance.eventId, eventId))
-      .orderBy(attendance.checkedInAt);
+      .from(attendanceTable)
+      .innerJoin(users, eq(attendanceTable.studentId, users.id))
+      .where(eq(attendanceTable.eventId, eventId))
+      .orderBy(attendanceTable.checkedInAt);
   }
 
   async getAttendanceByStudent(studentId: string): Promise<(Attendance & { event: Event })[]> {
     return await db
       .select({
-        id: attendance.id,
-        eventId: attendance.eventId,
-        studentId: attendance.studentId,
-        checkinMethod: attendance.checkinMethod,
-        checkedInAt: attendance.checkedInAt,
+        id: attendanceTable.id,
+        eventId: attendanceTable.eventId,
+        studentId: attendanceTable.studentId,
+        checkinMethod: attendanceTable.checkinMethod,
+        checkedInAt: attendanceTable.checkedInAt,
         event: events,
       })
-      .from(attendance)
-      .innerJoin(events, eq(attendance.eventId, events.id))
-      .where(eq(attendance.studentId, studentId))
+      .from(attendanceTable)
+      .innerJoin(events, eq(attendanceTable.eventId, events.id))
+      .where(eq(attendanceTable.studentId, studentId))
       .orderBy(desc(events.date));
   }
 
@@ -342,18 +350,18 @@ export class DatabaseStorage implements IStorage {
       .select({
         studentId: users.id,
         name: users.name,
-        attendanceCount: count(attendance.id),
+        attendanceCount: count(attendanceTable.id),
       })
       .from(users)
-      .leftJoin(attendance, eq(users.id, attendance.studentId))
+      .leftJoin(attendanceTable, eq(users.id, attendanceTable.studentId))
       .where(eq(users.role, "student"))
       .groupBy(users.id, users.name)
-      .orderBy(desc(count(attendance.id)))
+      .orderBy(desc(count(attendanceTable.id)))
       .limit(10);
   }
 
   async getFeedbackAnalytics(): Promise<{ eventId: string; title: string; averageRating: number; feedbackCount: number }[]> {
-    return await db
+    const result = await db
       .select({
         eventId: events.id,
         title: events.title,
@@ -365,6 +373,11 @@ export class DatabaseStorage implements IStorage {
       .groupBy(events.id, events.title)
       .orderBy(desc(avg(feedback.rating)))
       .limit(10);
+    
+    return result.map(item => ({
+      ...item,
+      averageRating: Number(item.averageRating) || 0
+    }));
   }
 }
 
