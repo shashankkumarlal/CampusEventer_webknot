@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { ChatInterface } from "@/components/chatbot";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import StudentDashboard from "@/pages/student-dashboard";
@@ -33,6 +34,7 @@ function App() {
           <div className="dark min-h-screen">
             <Toaster />
             <Router />
+            <ChatInterface />
           </div>
         </AuthProvider>
       </TooltipProvider>
