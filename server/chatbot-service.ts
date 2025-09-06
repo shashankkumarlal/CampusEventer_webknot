@@ -79,7 +79,7 @@ Be friendly, helpful, and concise in your responses. If users ask about specific
     try {
       // Get response from Groq
       const response = await this.groq.chat.completions.create({
-        model: "mixtral-8x7b-32768",
+        model: "llama3-70b-8192",
         messages,
         temperature: 0.7,
         max_tokens: 1024,
