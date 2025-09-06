@@ -36,6 +36,9 @@ export default function EventDetails() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Debug logging
+  console.log('EventDetails - ID from params:', id);
+
   const { data: event, isLoading: eventLoading } = useQuery<EventWithRegistrationCount>({
     queryKey: [`/api/events/${id}`],
     enabled: !!id,
