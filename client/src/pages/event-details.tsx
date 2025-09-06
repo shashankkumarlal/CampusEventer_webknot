@@ -37,22 +37,23 @@ export default function EventDetails() {
   const { toast } = useToast();
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithRegistrationCount>({
-    queryKey: ["/api/events", id],
+    queryKey: [`/api/events/${id}`],
+    enabled: !!id,
   });
 
   const { data: registrations = [] } = useQuery<RegistrationWithStudent[]>({
-    queryKey: ["/api/events", id, "registrations"],
-    enabled: user?.role === "admin",
+    queryKey: [`/api/events/${id}/registrations`],
+    enabled: !!id && user?.role === "admin",
   });
 
   const { data: attendance = [] } = useQuery<AttendanceWithStudent[]>({
-    queryKey: ["/api/events", id, "attendance"],
-    enabled: user?.role === "admin",
+    queryKey: [`/api/events/${id}/attendance`],
+    enabled: !!id && user?.role === "admin",
   });
 
   const { data: feedback = [] } = useQuery<FeedbackWithStudent[]>({
-    queryKey: ["/api/events", id, "feedback"],
-    enabled: user?.role === "admin",
+    queryKey: [`/api/events/${id}/feedback`],
+    enabled: !!id && user?.role === "admin",
   });
 
   const { data: myRegistrations = [] } = useQuery<Registration[]>({
@@ -210,7 +211,7 @@ export default function EventDetails() {
                       }
                       data-testid="event-type"
                     >
-                      {event.type.toUpperCase()}
+                      {event.type?.toUpperCase() || 'UNKNOWN'}
                     </Badge>
                     <Badge 
                       className={
