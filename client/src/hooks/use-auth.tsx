@@ -38,6 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      // Clear any cached user-specific data to ensure fresh data for the new user
+      queryClient.invalidateQueries({ queryKey: ["/api/my-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-feedback"] });
     },
     onError: (error: Error) => {
       toast({
@@ -55,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      // Clear any cached user-specific data to ensure fresh data for the new user
+      queryClient.invalidateQueries({ queryKey: ["/api/my-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-feedback"] });
     },
     onError: (error: Error) => {
       toast({
@@ -71,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      // Clear all user-specific cached data when logging out
+      queryClient.removeQueries({ queryKey: ["/api/my-registrations"] });
+      queryClient.removeQueries({ queryKey: ["/api/my-attendance"] });
+      queryClient.removeQueries({ queryKey: ["/api/my-feedback"] });
     },
     onError: (error: Error) => {
       toast({
