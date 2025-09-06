@@ -55,7 +55,7 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8001/api/chatbot/chat", {
+      const response = await fetch("/api/chatbot/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +110,7 @@ export default function ChatInterface() {
     }
 
     try {
-      await fetch(`http://localhost:8001/api/chatbot/conversation/${conversationId}`, {
+      await fetch(`/api/chatbot/conversation/${conversationId}`, {
         method: "DELETE",
       });
     } catch (error) {

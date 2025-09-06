@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { ChatbotService } from "./chatbot-service";
 import { 
   insertEventSchema, insertRegistrationSchema, 
   insertAttendanceSchema, insertFeedbackSchema,
@@ -12,6 +13,9 @@ import { z } from "zod";
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
+
+  // Initialize chatbot service
+  const chatbotService = new ChatbotService();
 
   // Middleware to check authentication
   const requireAuth = (req: any, res: any, next: any) => {
@@ -322,6 +326,54 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch colleges" });
     }
+  });
+
+  // Chatbot routes
+  app.post("/api/chatbot/chat", async (req, res) => {
+    try {
+      const { message, conversation_id } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const response = await chatbotService.chat(message, conversation_id);
+      res.json(response);
+    } catch (error) {
+      console.error("Chatbot error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/chatbot/conversation/:id", async (req, res) => {
+    try {
+      const conversationId = req.params.id;
+      const history = chatbotService.getConversationHistory(conversationId);
+      res.json({ conversation_id: conversationId, messages: history });
+    } catch (error) {
+      console.error("Get conversation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/chatbot/conversation/:id", async (req, res) => {
+    try {
+      const conversationId = req.params.id;
+      const success = chatbotService.clearConversation(conversationId);
+      
+      if (success) {
+        res.json({ message: "Conversation cleared successfully" });
+      } else {
+        res.status(404).json({ message: "Conversation not found" });
+      }
+    } catch (error) {
+      console.error("Clear conversation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/chatbot/health", async (req, res) => {
+    res.json({ status: "healthy", service: "chatbot" });
   });
 
   const httpServer = createServer(app);
