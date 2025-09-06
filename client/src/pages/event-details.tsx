@@ -74,7 +74,8 @@ export default function EventDetails() {
       await apiRequest("POST", `/api/events/${id}/register`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events", id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-registrations"] });
       toast({
         title: "Registration Successful!",
@@ -95,7 +96,8 @@ export default function EventDetails() {
       await apiRequest("DELETE", `/api/events/${id}/register`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events", id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-registrations"] });
       toast({
         title: "Registration Cancelled",
