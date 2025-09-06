@@ -67,7 +67,7 @@ export default function EventForm({ event, onSuccess, onCancel }: EventFormProps
     mutationFn: async (data: EventFormData) => {
       const eventData: InsertEvent = {
         ...data,
-        date: data.date.toISOString(),
+        date: data.date,
         collegeId: data.collegeId,
       };
       const response = await apiRequest("POST", "/api/events", eventData);
@@ -95,7 +95,7 @@ export default function EventForm({ event, onSuccess, onCancel }: EventFormProps
       if (!event) throw new Error("Event not found");
       const eventData: Partial<InsertEvent> = {
         ...data,
-        date: data.date.toISOString(),
+        date: data.date,
         collegeId: data.collegeId,
       };
       const response = await apiRequest("PUT", `/api/events/${event.id}`, eventData);
