@@ -157,6 +157,10 @@ export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   createdAt: true,
   createdBy: true,
+}).extend({
+  date: z.union([z.date(), z.string().datetime()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
 });
 
 export const insertRegistrationSchema = createInsertSchema(registrations).omit({
