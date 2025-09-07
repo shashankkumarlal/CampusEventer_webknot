@@ -356,6 +356,8 @@ erDiagram
     STUDENTS ||--o{ ATTENDANCE : attends
     EVENTS ||--o{ FEEDBACK : receives
     STUDENTS ||--o{ FEEDBACK : gives
+```
+
 **3. API Design**
 -Events:
 GET /api/events - List all events (with filters)
