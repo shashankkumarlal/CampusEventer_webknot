@@ -1,77 +1,71 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, pgEnum } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["student", "admin"]);
-export const eventTypeEnum = pgEnum("event_type", ["hackathon", "workshop", "festival", "seminar"]);
-export const eventStatusEnum = pgEnum("event_status", ["upcoming", "active", "completed", "cancelled"]);
-export const checkinMethodEnum = pgEnum("checkin_method", ["manual", "qr", "self"]);
+export const userRoleEnum = ["student", "admin"] as const;
+export const eventStatusEnum = ["upcoming", "active", "completed", "cancelled"] as const;
+export const checkinMethodEnum = ["manual", "qr", "self"] as const;
 
-// Users table (students and admins)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+// Tables
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   username: text("username").notNull().unique(),
+  name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  role: userRoleEnum("role").notNull().default("student"),
-  name: text("name").notNull(),
-  collegeId: varchar("college_id").references(() => colleges.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  role: text("role", { enum: userRoleEnum }).notNull().default("student"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+  collegeId: text("college_id"),
 });
 
-// Colleges table
-export const colleges = pgTable("colleges", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
+export const colleges = sqliteTable("colleges", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  name: text("name").notNull().unique(),
   location: text("location").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });
 
-// Events table
-export const events = pgTable("events", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const events = sqliteTable("events", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   title: text("title").notNull(),
-  description: text("description").notNull(),
-  type: eventTypeEnum("type").notNull(),
-  date: timestamp("date").notNull(),
-  time: text("time").notNull(),
+  description: text("description"),
+  date: integer("date", { mode: "timestamp" }).notNull(),
   location: text("location").notNull(),
-  organizer: text("organizer").notNull(),
-  maxCapacity: integer("max_capacity").notNull(),
-  status: eventStatusEnum("status").notNull().default("upcoming"),
-  collegeId: varchar("college_id").notNull().references(() => colleges.id),
-  createdBy: varchar("created_by").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  capacity: integer("capacity").notNull(),
+  registrationDeadline: integer("registration_deadline", { mode: "timestamp" }),
+  status: text("status", { enum: eventStatusEnum }).notNull().default("upcoming"),
+  imageUrl: text("image_url"),
+  tags: text("tags"), // JSON string of tags array
+  requirements: text("requirements"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+  createdBy: text("created_by").notNull(),
+  collegeId: text("college_id").notNull(),
 });
 
-// Event registrations table
-export const registrations = pgTable("registrations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
-  studentId: varchar("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  registeredAt: timestamp("registered_at").defaultNow().notNull(),
+export const registrations = sqliteTable("registrations", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  eventId: text("event_id").notNull(),
+  studentId: text("student_id").notNull(),
+  registeredAt: integer("registered_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });
 
-// Attendance table
-export const attendance = pgTable("attendance", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
-  studentId: varchar("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  checkinMethod: checkinMethodEnum("checkin_method").notNull().default("manual"),
-  checkedInAt: timestamp("checked_in_at").defaultNow().notNull(),
+export const attendance = sqliteTable("attendance", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  eventId: text("event_id").notNull(),
+  studentId: text("student_id").notNull(),
+  checkinMethod: text("checkin_method", { enum: checkinMethodEnum }).notNull().default("manual"),
+  checkedInAt: integer("checked_in_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });
 
-// Feedback table
-export const feedback = pgTable("feedback", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
-  studentId: varchar("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  rating: integer("rating").notNull(), // 1-5 stars
+export const feedback = sqliteTable("feedback", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  eventId: text("event_id").notNull(),
+  studentId: text("student_id").notNull(),
+  rating: integer("rating").notNull(),
   comment: text("comment"),
-  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  submittedAt: integer("submitted_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });
 
 // Relations
@@ -92,13 +86,13 @@ export const collegesRelations = relations(colleges, ({ many }) => ({
 }));
 
 export const eventsRelations = relations(events, ({ one, many }) => ({
-  college: one(colleges, {
-    fields: [events.collegeId],
-    references: [colleges.id],
-  }),
   creator: one(users, {
     fields: [events.createdBy],
     references: [users.id],
+  }),
+  college: one(colleges, {
+    fields: [events.collegeId],
+    references: [colleges.id],
   }),
   registrations: many(registrations),
   attendance: many(attendance),
@@ -138,56 +132,30 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   }),
 }));
 
-// Zod schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  email: true,
-  password: true,
-  role: true,
-  name: true,
-  collegeId: true,
-});
+// Zod schemas for validation and type inference
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
+export const insertCollegeSchema = createInsertSchema(colleges);
+export const selectCollegeSchema = createSelectSchema(colleges);
+export const insertEventSchema = createInsertSchema(events);
+export const selectEventSchema = createSelectSchema(events);
+export const insertRegistrationSchema = createInsertSchema(registrations);
+export const selectRegistrationSchema = createSelectSchema(registrations);
+export const insertAttendanceSchema = createInsertSchema(attendance);
+export const selectAttendanceSchema = createSelectSchema(attendance);
+export const insertFeedbackSchema = createInsertSchema(feedback);
+export const selectFeedbackSchema = createSelectSchema(feedback);
 
-export const insertCollegeSchema = createInsertSchema(colleges).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertEventSchema = createInsertSchema(events).omit({
-  id: true,
-  createdAt: true,
-  createdBy: true,
-}).extend({
-  date: z.union([z.date(), z.string().datetime()]).transform((val) => 
-    typeof val === 'string' ? new Date(val) : val
-  ),
-});
-
-export const insertRegistrationSchema = createInsertSchema(registrations).omit({
-  id: true,
-  registeredAt: true,
-});
-
-export const insertAttendanceSchema = createInsertSchema(attendance).omit({
-  id: true,
-  checkedInAt: true,
-});
-
-export const insertFeedbackSchema = createInsertSchema(feedback).omit({
-  id: true,
-  submittedAt: true,
-});
-
-// Types
+// Type exports
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type College = typeof colleges.$inferSelect;
-export type InsertCollege = z.infer<typeof insertCollegeSchema>;
+export type InsertCollege = typeof colleges.$inferInsert;
 export type Event = typeof events.$inferSelect;
-export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type InsertEvent = typeof events.$inferInsert;
 export type Registration = typeof registrations.$inferSelect;
-export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+export type InsertRegistration = typeof registrations.$inferInsert;
 export type Attendance = typeof attendance.$inferSelect;
-export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
+export type InsertAttendance = typeof attendance.$inferInsert;
 export type Feedback = typeof feedback.$inferSelect;
-export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type InsertFeedback = typeof feedback.$inferInsert;

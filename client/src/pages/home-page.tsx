@@ -1,14 +1,30 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Search, Filter } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Navbar from "@/components/navbar";
-import EventCard from "@/components/event-card";
-import type { Event } from "@shared/schema";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import Navbar from "../components/navbar";
+import EventCard from "../components/event-card";
+
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  date: Date;
+  location: string;
+  capacity: number;
+  registrationDeadline: Date | null;
+  status: string;
+  imageUrl: string | null;
+  tags: string | null;
+  requirements: string | null;
+  createdAt: Date;
+  createdBy: string;
+  collegeId: string;
+}
 
 const eventTypes = [
   { value: "hackathon", label: "Hackathons", icon: "💻" },
@@ -26,11 +42,22 @@ export default function HomePage() {
     queryKey: ["/api/events"],
   });
 
+  // Extract event type from tags
+  const getEventType = (tags: string | null) => {
+    if (!tags) return "event";
+    try {
+      const parsedTags = JSON.parse(tags);
+      return parsedTags[0] || "event";
+    } catch {
+      return "event";
+    }
+  };
+
   const filteredEvents = events.filter(event => {
     if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
-    if (selectedType && event.type !== selectedType) {
+    if (selectedType && getEventType(event.tags) !== selectedType) {
       return false;
     }
     return true;

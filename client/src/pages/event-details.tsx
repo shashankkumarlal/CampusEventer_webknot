@@ -1,33 +1,84 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users, Clock, User, Star, ArrowLeft, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import Navbar from "@/components/navbar";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Event, Registration, Attendance, Feedback, User as UserType } from "@shared/schema";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Separator } from "../components/ui/separator";
+import { Progress } from "../components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import Navbar from "../components/navbar";
+import FeedbackForm from "../components/forms/feedback-form";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
+import { apiRequest, queryClient } from "../lib/queryClient";
+
+// Define interfaces based on actual database schema
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  date: Date;
+  location: string;
+  capacity: number;
+  registrationDeadline: Date | null;
+  status: string;
+  imageUrl: string | null;
+  tags: string | null;
+  requirements: string | null;
+  createdAt: Date;
+  createdBy: string;
+  collegeId: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  collegeId: string;
+}
+
+interface Registration {
+  id: string;
+  eventId: string;
+  studentId: string;
+  registeredAt: Date;
+}
+
+interface Attendance {
+  id: string;
+  eventId: string;
+  studentId: string;
+  checkinMethod: string;
+  checkedInAt: Date;
+}
+
+interface Feedback {
+  id: string;
+  eventId: string;
+  studentId: string;
+  rating: number;
+  comment: string | null;
+  submittedAt: Date;
+}
 
 interface EventWithRegistrationCount extends Event {
   registrationCount: number;
 }
 
 interface RegistrationWithStudent extends Registration {
-  student: UserType;
+  student: User;
 }
 
 interface AttendanceWithStudent extends Attendance {
-  student: UserType;
+  student: User;
 }
 
 interface FeedbackWithStudent extends Feedback {
-  student: UserType;
+  student: User;
 }
 
 export default function EventDetails() {
@@ -35,6 +86,7 @@ export default function EventDetails() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [showFeedbackForm, setShowFeedbackForm] = React.useState(false);
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithRegistrationCount>({
     queryKey: [`/api/events/${id}`],
@@ -56,6 +108,14 @@ export default function EventDetails() {
     enabled: !!id && user?.role === "admin",
   });
 
+  // Check if current user has already submitted feedback for this event
+  const { data: userFeedback } = useQuery<Feedback[]>({
+    queryKey: [`/api/my-feedback`],
+    enabled: !!user && user.role === "student",
+  });
+
+  const hasSubmittedFeedback = userFeedback?.some(f => f.eventId === id);
+
   const { data: myRegistrations = [] } = useQuery<Registration[]>({
     queryKey: ["/api/my-registrations"],
     enabled: user?.role === "student",
@@ -68,6 +128,9 @@ export default function EventDetails() {
 
   const isRegistered = myRegistrations.some(reg => reg.eventId === id);
   const hasAttended = myAttendance.some(att => att.eventId === id);
+  
+  // Only show feedback option for students who have attended the event
+  const canGiveFeedback = user?.role === "student" && hasAttended && !hasSubmittedFeedback;
 
   const registerMutation = useMutation({
     mutationFn: async () => {
@@ -133,6 +196,27 @@ export default function EventDetails() {
     },
   });
 
+  const getEventTypeColor = (type: string) => {
+    switch (type) {
+      case "workshop": return "bg-blue-500";
+      case "seminar": return "bg-green-500";
+      case "conference": return "bg-purple-500";
+      case "networking": return "bg-orange-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  // Extract event type from tags
+  const getEventType = (tags: string | null) => {
+    if (!tags) return "event";
+    try {
+      const parsedTags = JSON.parse(tags);
+      return parsedTags[0] || "event";
+    } catch {
+      return "event";
+    }
+  };
+
   if (eventLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -171,8 +255,8 @@ export default function EventDetails() {
 
   const eventDate = new Date(event.date);
   const isUpcoming = eventDate > new Date();
-  const isFull = event.registrationCount >= event.maxCapacity;
-  const registrationPercentage = (event.registrationCount / event.maxCapacity) * 100;
+  const isFull = event.registrationCount >= event.capacity;
+  const registrationPercentage = (event.registrationCount / event.capacity) * 100;
   const averageRating = feedback.length > 0 
     ? feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length 
     : 0;
@@ -206,14 +290,14 @@ export default function EventDetails() {
                   <div className="flex items-center justify-between mb-6">
                     <Badge 
                       className={
-                        event.type === 'hackathon' ? 'bg-primary/20 text-primary border-primary/40' :
-                        event.type === 'workshop' ? 'bg-secondary/20 text-secondary border-secondary/40' :
-                        event.type === 'festival' ? 'bg-accent/20 text-accent border-accent/40' :
+                        getEventType(event.tags) === 'hackathon' ? 'bg-primary/20 text-primary border-primary/40' :
+                        getEventType(event.tags) === 'workshop' ? 'bg-secondary/20 text-secondary border-secondary/40' :
+                        getEventType(event.tags) === 'festival' ? 'bg-accent/20 text-accent border-accent/40' :
                         'bg-purple-500/20 text-purple-400 border-purple-500/40'
                       }
                       data-testid="event-type"
                     >
-                      {event.type?.toUpperCase() || 'UNKNOWN'}
+                      {getEventType(event.tags).toUpperCase()}
                     </Badge>
                     <Badge 
                       className={
@@ -243,7 +327,7 @@ export default function EventDetails() {
                     <div className="flex items-center space-x-2 text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       <span className="text-sm" data-testid="event-time">
-                        {event.time}
+                        {eventDate.toLocaleTimeString()}
                       </span>
                     </div>
                     
@@ -257,7 +341,7 @@ export default function EventDetails() {
                     <div className="flex items-center space-x-2 text-muted-foreground">
                       <User className="h-4 w-4" />
                       <span className="text-sm" data-testid="event-organizer">
-                        {event.organizer}
+                        Event Organizer
                       </span>
                     </div>
                   </div>
@@ -368,12 +452,12 @@ export default function EventDetails() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Capacity</span>
                       <span className="text-sm text-muted-foreground" data-testid="event-capacity">
-                        {event.registrationCount} / {event.maxCapacity}
+                        {event.registrationCount} / {event.capacity}
                       </span>
                     </div>
                     <Progress value={registrationPercentage} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {isFull ? "Event is full" : `${event.maxCapacity - event.registrationCount} spots remaining`}
+                      {isFull ? "Event is full" : `${event.capacity - event.registrationCount} spots remaining`}
                     </p>
                   </div>
 
@@ -397,18 +481,41 @@ export default function EventDetails() {
                             <span className="text-sm font-medium">You're registered!</span>
                           </div>
                           
-                          {!hasAttended && isUpcoming && (
+                          {hasAttended && (
                             <Button
-                              variant="outline"
-                              className="w-full"
+                              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white"
                               onClick={() => checkinMutation.mutate()}
                               disabled={checkinMutation.isPending}
                               data-testid="button-checkin"
                             >
-                              {checkinMutation.isPending ? "Checking in..." : "Check In"}
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Already Checked In
                             </Button>
                           )}
-                          
+
+                          {/* Feedback Button for Students */}
+                          {canGiveFeedback && (
+                            <Button
+                              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
+                              onClick={() => setShowFeedbackForm(true)}
+                              data-testid="button-give-feedback"
+                            >
+                              <Star className="mr-2 h-4 w-4" />
+                              Give Feedback
+                            </Button>
+                          )}
+
+                          {hasSubmittedFeedback && (
+                            <Button
+                              className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white"
+                              disabled
+                              data-testid="button-feedback-submitted"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Feedback Submitted
+                            </Button>
+                          )}
+
                           {hasAttended && (
                             <div className="flex items-center space-x-2 text-accent">
                               <CheckCircle className="h-4 w-4" />
@@ -488,6 +595,23 @@ export default function EventDetails() {
           </div>
         </motion.div>
       </main>
+
+      {/* Feedback Form Dialog */}
+      <Dialog open={showFeedbackForm} onOpenChange={setShowFeedbackForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Share Your Feedback</DialogTitle>
+          </DialogHeader>
+          <FeedbackForm
+            events={event ? [event] : []}
+            selectedEventId={event?.id}
+            onSuccess={() => {
+              setShowFeedbackForm(false);
+              queryClient.invalidateQueries({ queryKey: [`/api/my-feedback`] });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

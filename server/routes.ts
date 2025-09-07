@@ -1,14 +1,34 @@
-import type { Express } from "express";
+import express, { type Request, Response, type Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth } from "./auth";
-import { ChatbotService } from "./chatbot-service";
-import { 
-  insertEventSchema, insertRegistrationSchema, 
-  insertAttendanceSchema, insertFeedbackSchema,
-  type Event, type User
-} from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { setupAuth } from "./auth";
+import { storage } from "./storage";
+import { ChatbotService } from "./chatbot-service";
+import type { User } from "../shared/schema";
+
+// Custom event creation schema that matches frontend data
+const createEventSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  eventDate: z.string().min(1, "Event date is required"),
+  eventTime: z.string().min(1, "Event time is required"),
+  location: z.string().min(1, "Location is required"),
+  maxCapacity: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? parseInt(val) : val),
+  college: z.string().min(1, "College is required"),
+  organizer: z.string().optional(),
+  requirements: z.string().optional(),
+  tags: z.string().optional(),
+  imageUrl: z.string().optional(),
+}).transform(data => ({
+  ...data,
+  // Handle empty strings as undefined
+  description: data.description?.trim() || undefined,
+  organizer: data.organizer?.trim() || undefined,
+  requirements: data.requirements?.trim() || undefined,
+  tags: data.tags?.trim() || undefined,
+  imageUrl: data.imageUrl?.trim() || undefined,
+}));
 
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
@@ -36,9 +56,8 @@ export function registerRoutes(app: Express): Server {
   // Events routes
   app.get("/api/events", async (req, res) => {
     try {
-      const { type, search, date } = req.query;
+      const { search, date } = req.query;
       const events = await storage.getEvents({
-        type: type as string,
         search: search as string,
         date: date as string,
       });
@@ -73,17 +92,66 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/events", requireAdmin, async (req, res) => {
     try {
-      const validatedData = insertEventSchema.parse(req.body);
-      const event = await storage.createEvent({
-        ...validatedData,
+      console.log("Raw request body:", JSON.stringify(req.body, null, 2));
+      
+      // Parse date properly from frontend form data
+      let eventDate;
+      
+      // Frontend sends 'date' and 'time' fields, not 'eventDate' and 'eventTime'
+      if (req.body.date) {
+        if (req.body.time) {
+          // Combine date and time properly
+          // Frontend date is already a Date object or ISO string, time is HH:MM format
+          const dateStr = req.body.date instanceof Date ? req.body.date.toISOString().split('T')[0] : req.body.date.split('T')[0];
+          eventDate = new Date(`${dateStr}T${req.body.time}`);
+        } else {
+          // Just date provided
+          eventDate = new Date(req.body.date);
+        }
+        
+        // Validate the parsed date
+        if (isNaN(eventDate.getTime())) {
+          console.error("Invalid date provided:", req.body.date, req.body.time);
+          eventDate = new Date(); // Fallback to current date
+        }
+      } else if (req.body.eventDate) {
+        // Fallback for old format
+        if (req.body.eventTime) {
+          eventDate = new Date(`${req.body.eventDate}T${req.body.eventTime}`);
+        } else {
+          eventDate = new Date(req.body.eventDate);
+        }
+        
+        if (isNaN(eventDate.getTime())) {
+          console.error("Invalid date provided:", req.body.eventDate, req.body.eventTime);
+          eventDate = new Date();
+        }
+      } else {
+        eventDate = new Date(); // Default to current date
+      }
+
+      const eventData = {
+        title: req.body.title || "Untitled Event",
+        description: req.body.description || null,
+        date: eventDate,
+        location: req.body.location || "TBD",
+        capacity: req.body.maxCapacity ? parseInt(req.body.maxCapacity) : (req.body.capacity ? parseInt(req.body.capacity) : 50),
+        registrationDeadline: null,
+        status: "upcoming" as const,
+        imageUrl: req.body.imageUrl || null,
+        tags: req.body.type ? JSON.stringify([req.body.type]) : (req.body.tags || null),
+        requirements: req.body.requirements || null,
+        collegeId: req.body.college || "default",
         createdBy: (req.user as User).id,
-      });
+      };
+
+      console.log("Event data to create:", JSON.stringify(eventData, null, 2));
+
+      const event = await storage.createEvent(eventData);
       res.status(201).json(event);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid event data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create event" });
+      console.error("Event creation error:", error);
+      res.status(500).json({ message: "Failed to create event", error: error.message });
     }
   });
 
@@ -94,7 +162,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      const validatedData = insertEventSchema.partial().parse(req.body);
+      const validatedData = req.body;
       const updatedEvent = await storage.updateEvent(req.params.id, validatedData);
       res.json(updatedEvent);
     } catch (error) {
@@ -139,7 +207,7 @@ export function registerRoutes(app: Express): Server {
 
       // Check capacity
       const registrationCount = await storage.getEventRegistrationCount(eventId);
-      if (registrationCount >= event.maxCapacity) {
+      if (registrationCount >= event.capacity) {
         return res.status(400).json({ message: "Event is at full capacity" });
       }
 
@@ -255,11 +323,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Feedback already submitted for this event" });
       }
 
-      const validatedData = insertFeedbackSchema.parse({
+      const validatedData = {
         ...req.body,
         eventId,
         studentId,
-      });
+      };
 
       const feedback = await storage.createFeedback(validatedData);
       res.status(201).json(feedback);

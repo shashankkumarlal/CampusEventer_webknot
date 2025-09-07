@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Input } from "../ui/input";
+import { ScrollArea } from "../ui/scroll-area";
+import { Separator } from "../ui/separator";
+import { Badge } from "../ui/badge";
 import { MessageCircle, X, Send, Bot, User, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 
 interface ChatMessage {
   id: string;
@@ -29,6 +29,7 @@ export default function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -82,6 +83,11 @@ export default function ChatInterface() {
       setMessages(prev => [...prev, assistantMessage]);
       setConversationId(data.conversation_id);
 
+      // Refocus the input after response is received
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -98,6 +104,11 @@ export default function ChatInterface() {
       };
 
       setMessages(prev => [...prev, errorMessage]);
+      
+      // Refocus the input even after error
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     } finally {
       setIsLoading(false);
     }
@@ -296,6 +307,7 @@ export default function ChatInterface() {
                   <div className="p-4">
                     <div className="flex space-x-2">
                       <Input
+                        ref={inputRef}
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         onKeyPress={handleKeyPress}

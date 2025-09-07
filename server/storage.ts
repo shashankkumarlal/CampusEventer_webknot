@@ -3,14 +3,17 @@ import {
   type User, type InsertUser, type College, type InsertCollege,
   type Event, type InsertEvent, type Registration, type InsertRegistration,
   type Attendance, type InsertAttendance, type Feedback, type InsertFeedback
-} from "@shared/schema";
-import { db } from "./db";
+} from "../shared/schema";
+import { db } from "./db-sqlite";
 import { eq, desc, count, sql, and, avg, gte, lte } from "drizzle-orm";
+import SQLiteStoreFactory from "better-sqlite3-session-store";
+import Database from "better-sqlite3";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
 
-const PostgresSessionStore = connectPg(session);
+const SQLiteStore = SQLiteStoreFactory(session);
+
+// Use the same SQLite DB file for sessions
+const sessionDb = new Database('./database.sqlite');
 
 export interface IStorage {
   // User methods
@@ -24,7 +27,7 @@ export interface IStorage {
   createCollege(college: InsertCollege): Promise<College>;
   
   // Event methods
-  getEvents(filters?: { type?: string; search?: string; date?: string }): Promise<Event[]>;
+  getEvents(filters?: { search?: string; date?: string }): Promise<Event[]>;
   getEvent(id: string): Promise<Event | undefined>;
   createEvent(event: InsertEvent & { createdBy: string }): Promise<Event>;
   updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event>;
@@ -63,9 +66,12 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    this.sessionStore = new SQLiteStore({
+      client: sessionDb,
+      expired: {
+        clear: true,
+        intervalMs: 900000 // 15 minutes
+      }
     });
   }
 
@@ -101,17 +107,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Event methods
-  async getEvents(filters?: { type?: string; search?: string; date?: string }): Promise<Event[]> {
+  async getEvents(filters?: { search?: string; date?: string }): Promise<Event[]> {
     // Build conditions array
     const conditions = [];
 
-    if (filters?.type) {
-      conditions.push(eq(events.type, filters.type as any));
-    }
-
     if (filters?.search) {
       conditions.push(
-        sql`${events.title} ILIKE ${`%${filters.search}%`} OR ${events.description} ILIKE ${`%${filters.search}%`}`
+        sql`${events.title} LIKE ${`%${filters.search}%`} OR ${events.description} LIKE ${`%${filters.search}%`}`
       );
     }
 

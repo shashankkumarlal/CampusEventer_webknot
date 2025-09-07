@@ -1,30 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "../hooks/use-auth";
-import { Calendar, MapPin, Users, Check } from "lucide-react";
+import { Calendar, MapPin, Users, Clock } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-
-// Define the Event interface based on actual database schema
-interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  date: Date;
-  location: string;
-  capacity: number;
-  registrationDeadline: Date | null;
-  status: string;
-  imageUrl: string | null;
-  tags: string | null;
-  requirements: string | null;
-  createdAt: Date;
-  createdBy: string;
-  collegeId: string;
-}
+import type { Event } from "../../shared/schema";
 
 interface EventWithRegistrationCount extends Event {
   registrationCount: number;
@@ -34,30 +15,13 @@ interface EventCardProps {
   event: EventWithRegistrationCount;
 }
 
-interface Registration {
-  id: string;
-  eventId: string;
-  studentId: string;
-  registeredAt: Date;
-}
-
 export default function EventCard({ event }: EventCardProps) {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
-  
-  // Fetch user's registrations to check if they're registered for this event
-  const { data: userRegistrations = [] } = useQuery<Registration[]>({
-    queryKey: ["/api/my-registrations"],
-    enabled: !!user && user.role === "student",
-  });
   
   const eventDate = new Date(event.date);
   const isUpcoming = eventDate > new Date();
   const isFull = event.registrationCount >= event.capacity;
   const registrationPercentage = (event.registrationCount / event.capacity) * 100;
-  
-  // Check if current user is registered for this event
-  const isRegistered = userRegistrations.some(reg => reg.eventId === event.id);
 
   // Extract event type from tags or use default
   const eventType = event.tags ? (event.tags.includes('hackathon') ? 'hackathon' : 
@@ -218,9 +182,7 @@ export default function EventCard({ event }: EventCardProps) {
             
             <Button
               size="sm"
-              className={`bg-gradient-to-r ${getButtonGradient()} text-white hover:opacity-90 transition-all ${
-                isRegistered ? 'bg-green-600 hover:bg-green-700' : ''
-              }`}
+              className={`bg-gradient-to-r ${getButtonGradient()} text-white hover:opacity-90 transition-all`}
               onClick={(e) => {
                 e.stopPropagation();
                 setLocation(`/events/${event.id}`);
@@ -228,14 +190,7 @@ export default function EventCard({ event }: EventCardProps) {
               disabled={!isUpcoming}
               data-testid={`button-view-event-${event.id}`}
             >
-              {!isUpcoming ? "Event Ended" : 
-               isRegistered ? (
-                 <span className="flex items-center">
-                   <Check className="h-3 w-3 mr-1" />
-                   Registered
-                 </span>
-               ) : 
-               isFull ? "View Details" : "Register Now"}
+              {!isUpcoming ? "Event Ended" : isFull ? "View Details" : "Register Now"}
             </Button>
           </div>
         </CardContent>

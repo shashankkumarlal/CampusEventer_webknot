@@ -79,10 +79,10 @@ Be friendly, helpful, and concise in your responses. If users ask about specific
     try {
       // Get response from Groq
       const response = await this.groq.chat.completions.create({
-        model: "llama3-70b-8192",
+        model: "llama3-8b-8192",
         messages,
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 512,
       });
 
       const responseContent = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
@@ -112,12 +112,70 @@ Be friendly, helpful, and concise in your responses. If users ask about specific
 
     } catch (error) {
       console.error("Error in Groq API call:", error);
+      
+      // Generate intelligent local responses based on message content
+      const fallbackMessage = this.generateLocalResponse(message);
+      const timestamp = new Date();
+      
+      // Add user message to history
+      this.conversations[conversationId].push({
+        id: `msg_${Date.now()}_user`,
+        role: "user",
+        content: message,
+        timestamp,
+      });
+
+      // Add fallback response to history
+      this.conversations[conversationId].push({
+        id: `msg_${Date.now()}_assistant`,
+        role: "assistant",
+        content: fallbackMessage,
+        timestamp,
+      });
+      
       return {
-        message: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        message: fallbackMessage,
         conversation_id: conversationId,
-        timestamp: new Date(),
+        timestamp,
       };
     }
+  }
+
+  private generateLocalResponse(message: string): string {
+    const lowerMessage = message.toLowerCase();
+    
+    // Event registration questions
+    if (lowerMessage.includes('sign up') || lowerMessage.includes('register') || lowerMessage.includes('registration')) {
+      return "To register for an event:\n\n1. Browse events on the main dashboard\n2. Click on an event you're interested in\n3. Click the 'Register Now' button\n4. You'll see a confirmation once registered\n\nNote: Some events have capacity limits and registration deadlines, so register early!";
+    }
+    
+    // Latest events questions
+    if (lowerMessage.includes('latest') || lowerMessage.includes('recent') || lowerMessage.includes('new') || lowerMessage.includes('upcoming')) {
+      return "To see the latest events:\n\n1. Go to the main dashboard\n2. Events are displayed with the most recent first\n3. Use the search and filter options to find specific types of events\n4. Check the event date and status to see what's upcoming\n\nYou can also filter by date to see events happening soon!";
+    }
+    
+    // Navigation help
+    if (lowerMessage.includes('navigate') || lowerMessage.includes('find') || lowerMessage.includes('where') || lowerMessage.includes('how to')) {
+      return "Here's how to navigate the platform:\n\n• **Dashboard**: Main page showing all events\n• **Event Details**: Click any event to see full information\n• **My Registrations**: View events you've signed up for\n• **Admin Panel**: Create and manage events (admin only)\n• **Profile**: Manage your account settings\n\nUse the navigation menu at the top to access different sections!";
+    }
+    
+    // Attendance and feedback
+    if (lowerMessage.includes('attend') || lowerMessage.includes('feedback') || lowerMessage.includes('review') || lowerMessage.includes('check in')) {
+      return "For attendance and feedback:\n\n**Attendance**: Admins can mark attendance during events\n**Feedback**: After attending an event, you can:\n1. Go to the event details page\n2. Click 'Give Feedback' (appears after attendance)\n3. Rate the event and leave comments\n\nYour feedback helps improve future events!";
+    }
+    
+    // Admin questions
+    if (lowerMessage.includes('admin') || lowerMessage.includes('create event') || lowerMessage.includes('manage')) {
+      return "For administrators:\n\n**Creating Events**:\n1. Go to Admin Dashboard\n2. Click 'Create Event'\n3. Fill in event details (title, date, location, capacity)\n4. Publish the event\n\n**Managing Events**:\n• View registrations and attendance\n• Edit event details\n• Mark attendance during events\n• View feedback and analytics";
+    }
+    
+    // Greetings
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+      return "Hello! I'm your Campus Assistant. I can help you with:\n\n• Finding and registering for events\n• Navigating the platform\n• Understanding event features\n• Admin tasks (if you're an administrator)\n\nWhat would you like to know about campus events?";
+    }
+    
+    // Default response
+    return "I'm here to help with campus events! I can assist you with:\n\n• **Event Registration**: How to sign up for events\n• **Finding Events**: Browse and search for events\n• **Platform Navigation**: Using different features\n• **Event Management**: Admin tasks and event creation\n• **Attendance & Feedback**: Check-in and reviews\n\nCould you be more specific about what you'd like to know?";
   }
 
   getConversationHistory(conversationId: string): ChatMessage[] {

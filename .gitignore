@@ -1,6 +1,54 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build files
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-server/public
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local development
+.serverless/
+.serverless_nextjs/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.temp/
+.tmp/
+.turbo/
+.next/
+out/
+
+# Vite specific
 vite.config.ts.*
 *.tar.gz

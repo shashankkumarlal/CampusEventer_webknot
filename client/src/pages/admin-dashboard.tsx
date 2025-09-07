@@ -1,19 +1,54 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Plus, Users, Calendar, TrendingUp, Edit, Trash2, Eye } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import Navbar from "@/components/navbar";
-import EventForm from "@/components/forms/event-form";
-import EventPopularityChart from "@/components/charts/event-popularity-chart";
-import AttendanceChart from "@/components/charts/attendance-chart";
-import { useAuth } from "@/hooks/use-auth";
-import type { Event, Registration, User } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Input } from "../components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import Navbar from "../components/navbar";
+import EventForm from "../components/forms/event-form";
+import EventPopularityChart from "../components/charts/event-popularity-chart";
+import AttendanceChart from "../components/charts/attendance-chart";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { useLocation } from "wouter";
+
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  date: Date;
+  location: string;
+  capacity: number;
+  registrationDeadline: Date | null;
+  status: string;
+  imageUrl: string | null;
+  tags: string | null;
+  requirements: string | null;
+  createdAt: Date;
+  createdBy: string;
+  collegeId: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  collegeId: string;
+}
+
+interface Registration {
+  id: string;
+  eventId: string;
+  studentId: string;
+  registeredAt: Date;
+}
 
 interface EventWithRegistrationCount extends Event {
   registrationCount: number;
@@ -44,6 +79,8 @@ interface FeedbackAnalytics {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
@@ -73,10 +110,54 @@ export default function AdminDashboard() {
   const totalRegistrations = events.reduce((sum, event) => sum + event.registrationCount, 0);
   const averageRegistrations = totalEvents > 0 ? totalRegistrations / totalEvents : 0;
 
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      const response = await apiRequest("DELETE", `/api/events/${eventId}`);
+      // DELETE returns 204 No Content, so don't try to parse JSON
+      if (response.status === 204) {
+        return null;
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Event Deleted",
+        description: "The event has been successfully deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEventCreated = () => {
     setIsEventFormOpen(false);
     setSelectedEvent(null);
     refetchEvents();
+  };
+
+  const handleViewEvent = (eventId: string) => {
+    setLocation(`/events/${eventId}`);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    deleteEventMutation.mutate(eventId);
+  };
+
+  // Extract event type from tags
+  const getEventType = (tags: string | null) => {
+    if (!tags) return "event";
+    try {
+      const parsedTags = JSON.parse(tags);
+      return parsedTags[0] || "event";
+    } catch {
+      return "event";
+    }
   };
 
   return (
@@ -258,7 +339,8 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {filteredEvents.map((event) => {
-                        const registrationPercentage = (event.registrationCount / event.maxCapacity) * 100;
+                        const eventType = getEventType(event.tags);
+                        const registrationPercentage = (event.registrationCount / event.capacity) * 100;
                         
                         return (
                           <TableRow key={event.id} className="hover:bg-muted/50" data-testid={`event-row-${event.id}`}>
@@ -273,13 +355,13 @@ export default function AdminDashboard() {
                             <TableCell>
                               <Badge 
                                 className={
-                                  event.type === 'hackathon' ? 'bg-primary/20 text-primary' :
-                                  event.type === 'workshop' ? 'bg-secondary/20 text-secondary' :
-                                  event.type === 'festival' ? 'bg-accent/20 text-accent' :
+                                  eventType === 'hackathon' ? 'bg-primary/20 text-primary' :
+                                  eventType === 'workshop' ? 'bg-secondary/20 text-secondary' :
+                                  eventType === 'festival' ? 'bg-accent/20 text-accent' :
                                   'bg-purple-500/20 text-purple-400'
                                 }
                               >
-                                {event.type}
+                                {eventType}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-sm">
@@ -289,7 +371,7 @@ export default function AdminDashboard() {
                               <div className="flex items-center space-x-2">
                                 <div className="text-sm">
                                   <span className="font-medium">{event.registrationCount}</span>
-                                  <span className="text-muted-foreground">/{event.maxCapacity}</span>
+                                  <span className="text-muted-foreground">/{event.capacity}</span>
                                 </div>
                                 <div className="w-16 h-2 bg-muted rounded-full">
                                   <div 
@@ -333,18 +415,40 @@ export default function AdminDashboard() {
                                   size="sm" 
                                   variant="ghost" 
                                   className="p-2 text-muted-foreground hover:bg-muted"
+                                  onClick={() => handleViewEvent(event.id)}
                                   data-testid={`button-view-${event.id}`}
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="p-2 text-destructive hover:bg-destructive/20"
-                                  data-testid={`button-delete-${event.id}`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      className="p-2 text-destructive hover:bg-destructive/20"
+                                      data-testid={`button-delete-${event.id}`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete "{event.title}"? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteEvent(event.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>

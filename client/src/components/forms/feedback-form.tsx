@@ -1,17 +1,33 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { Star, MessageSquare, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Event } from "@shared/schema";
+import { Button } from "../ui/button";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Progress } from "../ui/progress";
+import { useToast } from "../../hooks/use-toast";
+import { apiRequest, queryClient } from "../../lib/queryClient";
+
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  date: Date;
+  location: string;
+  capacity: number;
+  registrationDeadline: Date | null;
+  status: string;
+  imageUrl: string | null;
+  tags: string | null;
+  requirements: string | null;
+  createdAt: Date;
+  createdBy: string;
+  collegeId: string;
+}
 
 const feedbackSchema = z.object({
   eventId: z.string().min(1, "Please select an event"),
