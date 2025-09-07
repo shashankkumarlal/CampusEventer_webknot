@@ -40,8 +40,11 @@ jobs:
         # Install TypeScript globally
         npm install -g typescript
         
+    - name: Install ESLint
+      run: npm install -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y
+      
     - name: Run Linter
-      run: npm run lint:fix
+      run: npx eslint . --ext .ts,.tsx --fix
     
     - name: Run Tests
       env:
