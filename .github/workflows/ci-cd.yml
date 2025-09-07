@@ -11,42 +11,49 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     
-    services:
-      # Service container for SQLite
-      sqlite:
-        image: sqlite
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_DB: testdb
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpass
-    
     steps:
     - uses: actions/checkout@v3
     
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '20.x'
         cache: 'npm'
     
     - name: Install Dependencies
       run: |
+        # Install root dependencies
         npm ci
-        cd server && npm ci
-        cd ../client && npm ci
-    
+        
+        # Install server dependencies
+        cd server
+        npm ci
+        
+        # Install client dependencies
+        cd ../client
+        npm ci
+        
+        # Install test dependencies
+        cd ..
+        npm install -D vitest @vitest/coverage-v8 @vitest/ui @types/node
+        
+        # Install TypeScript globally
+        npm install -g typescript
+        
     - name: Run Linter
       run: npm run lint
     
     - name: Run Tests
       env:
         NODE_ENV: test
-        DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
       run: |
+        # Run client tests
+        cd client
         npm test -- --coverage
-        cd server && npm test
+        
+        # Run server tests
+        cd ../server
+        npm run test:ci
     
   deploy:
     name: Deploy
@@ -60,7 +67,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '20.x'
     
     - name: Install Dependencies
       run: |
