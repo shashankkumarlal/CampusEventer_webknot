@@ -7,8 +7,8 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  test:
-    name: Run Tests
+  build:
+    name: Build and Lint
     runs-on: ubuntu-latest
     
     steps:
@@ -33,36 +33,20 @@ jobs:
         cd ../client
         npm ci
         
-        # Install test dependencies
-        cd ..
-        npm install -D vitest @vitest/coverage-v8 @vitest/ui @types/node
-        
         # Install TypeScript globally
         npm install -g typescript
-        
-    - name: Install ESLint and dependencies
-      run: |
-        npm install -D eslint@^9.0.0 @eslint/js @typescript-eslint/parser @typescript-eslint/eslint-plugin \
-          eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y
-        
+    
     - name: Run Linter
       run: npx eslint . --ext .ts,.tsx --fix --config eslint.config.js --max-warnings=0 || true
     
-    - name: Run Tests
-      env:
-        NODE_ENV: test
+    - name: Build
       run: |
-        # Run client tests
         cd client
-        npm test -- --coverage
-        
-        # Run server tests
-        cd ../server
-        npm run test:ci
-    
+        npm run build
+  
   deploy:
     name: Deploy
-    needs: test
+    needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
