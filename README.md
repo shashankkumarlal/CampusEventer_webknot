@@ -45,7 +45,7 @@ Developed responsive UI components with Tailwind CSS
 Added smooth animations and transitions
 Implemented real-time updates for event status changes
 
-# I personally felt of integrating an AI CHATBOT using Groq api , GROQ because i have tested many other APIs and felt groq is the fastest and provides more and better tokenisation comparatively so chunking is made a lot efficient.
+# I personally felt of integrating an AI CHATBOT using Groq api , GROQ because i have tested many other APIs and felt groq is the fastest and provides more and better tokenization comparatively so chunking is made a lot efficient.
 
 4. AI Integration
 Added an intelligent chatbot for event assistance
