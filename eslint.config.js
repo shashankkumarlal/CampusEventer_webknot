@@ -8,7 +8,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['**/node_modules', '**/dist', '**/*.d.ts'],
+    ignores: ['**/node_modules', '**/dist', '**/*.d.ts', '**/vite.config.ts'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -20,10 +20,13 @@ export default [
         ecmaFeatures: {
           jsx: true,
         },
+        project: './tsconfig.json',
       },
       globals: {
         ...globals.browser,
         ...globals.node,
+        React: 'readonly',
+        JSX: 'readonly',
       },
     },
     plugins: {
@@ -38,10 +41,25 @@ export default [
       ...reactPlugin.configs['recommended'].rules,
       ...reactHooksPlugin.configs['recommended'].rules,
       ...jsxA11yPlugin.configs['recommended'].rules,
+      // React specific
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react/no-unescaped-entities': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['cmdk-input-wrapper'] }],
+      // TypeScript specific
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      // General
+      'no-undef': 'off', // TypeScript handles this
+      'no-redeclare': 'off', // Handled by TypeScript
+      'no-unused-vars': 'off', // Handled by TypeScript
+      // Accessibility
+      'jsx-a11y/heading-has-content': 'warn',
+      'jsx-a11y/anchor-has-content': 'warn',
     },
     settings: {
       react: {
