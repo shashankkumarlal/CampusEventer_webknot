@@ -1,21 +1,42 @@
-node_modules
-**/node_modules
-dist
-**/dist
-*.d.ts
-**/*.d.ts
-vite.config.ts
-**/vite.config.ts
-**/tailwind.config.ts
-**/*.test.ts
-**/*.test.tsx
-**/test/**
-**/__tests__/**
-**/__mocks__/**
-**/coverage/**
-**/.next/**
-**/out/**
-**/build/**
-**/.vercel/**
-**/.netlify/**
-**/public/**
+# Build and dependency directories
+node_modules/
+dist/
+build/
+
+# Test and coverage directories
+coverage/
+__tests__/
+__mocks__/
+
+# Framework specific
+.next/
+out/
+.vercel/
+.netlify/
+
+# IDE specific
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
