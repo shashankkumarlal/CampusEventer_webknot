@@ -8,7 +8,48 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['**/node_modules', '**/dist', '**/*.d.ts', '**/vite.config.ts'],
+    ignores: [
+      '**/node_modules',
+      '**/dist',
+      '**/*.d.ts',
+      '**/vite.config.ts',
+      // Build and dependency directories
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      // Test and coverage directories
+      '**/coverage/**',
+      '**/__tests__/**',
+      '**/__mocks__/**',
+      // Framework specific
+      '**/.next/**',
+      '**/out/**',
+      '**/.vercel/**',
+      '**/.netlify/**',
+      // IDE specific
+      '**/.idea/**',
+      '**/.vscode/**',
+      '**/*.sublime-workspace',
+      '**/*.sublime-project',
+      // Environment variables
+      '**/.env',
+      '**/.env.local',
+      '**/.env.*.local',
+      // Logs
+      '**/logs',
+      '**/*.log',
+      '**/npm-debug.log*',
+      '**/yarn-debug.log*',
+      '**/yarn-error.log*',
+      // OS generated files
+      '**/.DS_Store',
+      '**/.DS_Store?',
+      '**/._*',
+      '**/.Spotlight-V100',
+      '**/.Trashes',
+      '**/ehthumbs.db',
+      '**/Thumbs.db'
+    ]
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -34,14 +75,6 @@ export default [
       'react': reactPlugin,
       'react-hooks': reactHooksPlugin,
       'jsx-a11y': jsxA11yPlugin,
-    },
-    // Set up rules to not fail on warnings
-    onRulesCustomSeverity: (severity, ruleId) => {
-      // Treat all rules as non-fatal (warnings) in CI
-      if (process.env.CI) {
-        return 'warn';
-      }
-      return severity;
     },
     rules: {
       ...js.configs.recommended.rules,
