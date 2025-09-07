@@ -101,47 +101,56 @@ CampusEventer started with a vision to create a comprehensive event management s
 - Deploy to staging environment.  
 - Set up CI/CD pipeline.
 
----
-
+## 📂 Project Structure
 CampusEventer/
-├── client/ # React frontend
-├── server/ # Node.js/Express backend
-├── shared/ # Shared TypeScript types
-├── .github/ # GitHub workflows
-└── docker/ # Docker configuration
-
-
-**Frontend Structure:**
-
-client/
-├── public/
-├── src/
-│ ├── assets/
-│ ├── components/
-│ ├── hooks/
-│ ├── pages/
-│ ├── services/
-│ ├── styles/
-│ ├── types/
-│ ├── App.tsx
-│ └── main.tsx
-
-
-**Backend Structure:**
-
-server/
-├── config/
-├── controllers/
-├── middleware/
-├── models/
-├── routes/
-├── services/
-├── utils/
-├── app.js
-└── server.js
-
-
----
+├── .github/                 # GitHub workflows and actions
+│   └── workflows/
+│       └── ci-cd.yml        # CI/CD pipeline configuration
+│
+├── .vscode/                 # VSCode settings
+│   └── settings.json        # Workspace settings
+│
+├── client/                  # Frontend React application
+│   ├── public/              # Static assets
+│   └── src/                 # Source code
+│       ├── assets/          # Images, fonts, etc.
+│       ├── components/      # Reusable UI components
+│       ├── hooks/           # Custom React hooks
+│       ├── pages/           # Application pages
+│       ├── services/        # API service calls
+│       ├── styles/          # Global styles
+│       ├── types/           # TypeScript type definitions
+│       ├── App.tsx          # Main App component
+│       └── main.tsx         # Application entry point
+│
+├── server/                  # Backend Express server
+│   ├── config/             # Configuration files
+│   ├── controllers/        # Request handlers
+│   ├── middleware/         # Custom middleware
+│   ├── models/             # Database models
+│   ├── routes/             # API routes
+│   ├── services/           # Business logic
+│   ├── utils/              # Helper functions
+│   ├── app.js              # Express application
+│   └── server.js           # Server entry point
+│
+├── shared/                 # Shared code between frontend and backend
+│   ├── types/              # Shared TypeScript types
+│   └── utils/              # Shared utility functions
+│
+├── tests/                  # Test files
+│   ├── unit/               # Unit tests
+│   └── integration/        # Integration tests
+│
+├── .dockerignore           # Docker ignore file
+├── .env.example            # Example environment variables
+├── .eslintrc.js            # ESLint configuration
+├── .gitignore             # Git ignore file
+├── docker-compose.yml      # Docker Compose configuration
+├── Dockerfile              # Docker configuration
+├── package.json            # Project dependencies and scripts
+├── README.md               # Project documentation
+└── tsconfig.json          # TypeScript configuration
 
 ## 📦 Prerequisites
 
@@ -183,18 +192,18 @@ GROQ_API_KEY=your-groq-api-key
 # Session
 SESSION_SECRET=your-session-secret
 
-Design Document
+## Design Document
 1. Data to Track
 
-Events: Title, description, type, date, time, duration, location, capacity, organizer, status, metadata
+**Events**: Title, description, type, date, time, duration, location, capacity, organizer, status, metadata
 
-Users: Students (ID, name, email, college, year, department), Admins (ID, role, permissions)
+**Users**: Students (ID, name, email, college, year, department), Admins (ID, role, permissions)
 
-Registrations: Event ID, Student ID, timestamp, status, check-in method
+**Registrations**: Event ID, Student ID, timestamp, status, check-in method
 
-Attendance: Event ID, Student ID, check-in/out timestamps, method
+**Attendance**: Event ID, Student ID, check-in/out timestamps, method
 
-Feedback: Event ID, Student ID, rating, comments, timestamp
+**Feedback**: Event ID, Student ID, rating, comments, timestamp
 
 2. **Database Schema (ER Diagram)**
 <img width="645" height="665" alt="image" src="https://github.com/user-attachments/assets/ac98321f-85df-4453-93df-c267a43da01c" />
@@ -213,6 +222,7 @@ PUT /api/events/:id - Update event (Admin)
 
 DELETE /api/events/:id - Cancel event (Admin)
 
+
 Registrations:
 
 GET /api/registrations - List registrations (Admin)
@@ -220,6 +230,7 @@ GET /api/registrations - List registrations (Admin)
 POST /api/events/:eventId/register - Register
 
 DELETE /api/registrations/:id - Cancel
+
 
 Attendance:
 
@@ -229,6 +240,7 @@ POST /api/events/:eventId/check-out - Check-out
 
 GET /api/events/:eventId/attendance - List
 
+
 Feedback:
 
 POST /api/events/:eventId/feedback - Submit
@@ -236,6 +248,7 @@ POST /api/events/:eventId/feedback - Submit
 GET /api/events/:eventId/feedback - Event feedback
 
 GET /api/students/:studentId/feedback - Student feedback
+
 
 Reports:
 
@@ -290,7 +303,7 @@ sequenceDiagram
     Frontend->>Admin: Show success message
     Frontend->>Student: Show check-in confirmation
 
-5. Assumptions & Edge Cases
+## 5. Assumptions & Edge Cases
 
 Each event has one organizer
 
@@ -314,7 +327,7 @@ Late arrivals → Manual admin check-in
 
 Multiple check-ins → Prevent duplicates, log suspicious activity
 
-6. Scaling Analysis
+## 6. Scaling Analysis
 
 System Scale:
 
@@ -328,7 +341,7 @@ Total students: 25,000
 
 Total events/semester: 1,000
 
-Database & Performance:
+**Database & Performance:**
 
 Single PostgreSQL DB with indexes
 
@@ -365,7 +378,7 @@ CREATE TABLE college_1.events (
     title VARCHAR(255) NOT NULL
 );
 ```
-🤝 Contributing
+## 🤝 Contributing
 
 Fork the repository
 
@@ -377,12 +390,12 @@ Push branch: git push origin feature/AmazingFeature
 
 Open a Pull Request
 
-📄 License
+## 📄 License
 
 This project is licensed under the MIT License — see LICENSE
 .
 
-🙏 Acknowledgments
+## 🙏 Acknowledgments
 
 - [Vite](https://vitejs.dev/)
 - [React](https://reactjs.org/)
@@ -390,7 +403,7 @@ This project is licensed under the MIT License — see LICENSE
 - [GROQ](https://www.groq.com/)
 - [Replit](https://replit.com/)
 
-🎬 Demo
+## 🎬 Demo
 
 Frontend deployed on Netlify: https://extraordinary-monstera-c6e86e.netlify.app/auth
 
@@ -398,6 +411,4 @@ Full web app (local) demo video: [Google Drive Link](https://drive.google.com/fi
 
 <div align="center"> Made with ❤️ by Shashank Kumar Lal | Reva University | SRN: R22EP052 | B.Tech ECM </div> ```
 
-
-## 📂 Project Structure
 
