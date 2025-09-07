@@ -298,30 +298,64 @@ Rating (1-5)
 Comments
 Submission timestamp
 
-**2. Database Schema** ER Diagram:
-+-------------+       +----------------+       +-------------+
-|   Events    |       |  Registrations |       |  Students  |
-+-------------+       +----------------+       +-------------+
-| PK: id      |<----->| PK: id         |<----->| PK: id     |
-| title       |       | FK: event_id   |       | name       |
-| description |       | FK: student_id |       | email      |
-| type        |       | status         |       | college_id |
-| start_time  |       | registered_at  |       | department |
-| end_time    |       | attended       |       | year       |
-| location    |       +----------------+       +------------+
-| capacity    |                  |
-| status      |                  |
-| created_by  |                  v
-+-------------+       +-------------+       +-------------+
-                      | Attendance  |       |  Feedback   |
-                      +-------------+       +-------------+
-                      | PK: id      |       | PK: id      |
-                      | event_id    |<----->| event_id    |
-                      | student_id  |       | student_id  |
-                      | check_in    |       | rating      |
-                      | check_out   |       | comment     |
-                      | method      |       | submitted_at|
-                      +-------------+       +-------------+
+```markdown
+```mermaid
+erDiagram
+    EVENTS {
+        int id PK
+        string title
+        string description
+        string type
+        datetime start_time
+        datetime end_time
+        string location
+        int capacity
+        string status
+        string created_by
+    }
+
+    STUDENTS {
+        int id PK
+        string name
+        string email
+        int college_id
+        string department
+        int year
+    }
+
+    REGISTRATIONS {
+        int id PK
+        int event_id FK
+        int student_id FK
+        string status
+        datetime registered_at
+        bool attended
+    }
+
+    ATTENDANCE {
+        int id PK
+        int event_id FK
+        int student_id FK
+        datetime check_in
+        datetime check_out
+        string method
+    }
+
+    FEEDBACK {
+        int id PK
+        int event_id FK
+        int student_id FK
+        int rating
+        string comment
+        datetime submitted_at
+    }
+
+    EVENTS ||--o{ REGISTRATIONS : has
+    STUDENTS ||--o{ REGISTRATIONS : registers
+    EVENTS ||--o{ ATTENDANCE : has
+    STUDENTS ||--o{ ATTENDANCE : attends
+    EVENTS ||--o{ FEEDBACK : receives
+    STUDENTS ||--o{ FEEDBACK : gives
 **3. API Design**
 -Events:
 GET /api/events - List all events (with filters)
