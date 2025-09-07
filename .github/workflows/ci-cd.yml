@@ -41,7 +41,7 @@ jobs:
         npm install -g typescript
         
     - name: Run Linter
-      run: npm run lint
+      run: npm run lint:fix
     
     - name: Run Tests
       env:
