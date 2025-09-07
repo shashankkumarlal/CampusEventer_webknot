@@ -9,6 +9,12 @@ A modern platform to manage campus events efficiently with an intelligent chatbo
 
 ---
 
+Frontend deployed on Netlify: https://extraordinary-monstera-c6e86e.netlify.app/auth
+
+Full web app (local) demo video: [Google Drive Link](https://drive.google.com/file/d/1kpeAI9BMoR6W2cX4_pNtJSA0ysqxcX6w/view?usp=sharing)
+
+
+
 ## 🚀 Journey: From Idea to MVP
 
 CampusEventer started with a vision to create a comprehensive event management system for educational institutions. The development journey included:
