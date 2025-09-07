@@ -264,7 +264,240 @@ npm run build
 # Start in production mode
 npm run start:prod
    ```
+## Design Document
+**1. Data to Track**
+-Events
+Event Details: Title, description, type (workshop/hackathon/seminar), date, time, duration
+Location: Physical/Virtual, capacity, organizer details
+Status: Upcoming/Ongoing/Completed/Cancelled
+Metadata: Created at, last updated, created by
 
+-Users
+Students: ID, name, email, college, year, department
+Admins: ID, name, email, role, permissions
+Authentication: Hashed passwords, last login
+
+-Registrations
+Event ID
+Student ID
+Registration timestamp
+Status (registered/attended/cancelled)
+Check-in method (manual)
+
+-Attendance
+Event ID
+Student ID
+Check-in timestamp
+Check-out timestamp (if applicable)
+Attendance method (manual)
+
+-Feedback
+Event ID
+Student ID
+Rating (1-5)
+Comments
+Submission timestamp
+
+**2. Database Schema** ER Diagram:
++-------------+       +----------------+       +-------------+
+|   Events    |       |  Registrations |       |  Students  |
++-------------+       +----------------+       +-------------+
+| PK: id      |<----->| PK: id         |<----->| PK: id     |
+| title       |       | FK: event_id   |       | name       |
+| description |       | FK: student_id |       | email      |
+| type        |       | status         |       | college_id |
+| start_time  |       | registered_at  |       | department |
+| end_time    |       | attended       |       | year       |
+| location    |       +----------------+       +------------+
+| capacity    |                  |
+| status      |                  |
+| created_by  |                  v
++-------------+       +-------------+       +-------------+
+                      | Attendance  |       |  Feedback   |
+                      +-------------+       +-------------+
+                      | PK: id      |       | PK: id      |
+                      | event_id    |<----->| event_id    |
+                      | student_id  |       | student_id  |
+                      | check_in    |       | rating      |
+                      | check_out   |       | comment     |
+                      | method      |       | submitted_at|
+                      +-------------+       +-------------+
+**3. API Design**
+-Events:
+GET /api/events - List all events (with filters)
+GET /api/events/:id - Get event details
+POST /api/events - Create new event (Admin)
+PUT /api/events/:id - Update event (Admin)
+DELETE /api/events/:id - Cancel event (Admin)
+
+-Registrations:
+GET /api/registrations - List all registrations (Admin)
+POST /api/events/:eventId/register - Register for event
+DELETE /api/registrations/:id - Cancel registration
+
+-Attendance:
+POST /api/events/:eventId/check-in - Check in student
+POST /api/events/:eventId/check-out - Check out student
+GET /api/events/:eventId/attendance - Get attendance list
+
+-Feedback:
+POST /api/events/:eventId/feedback - Submit feedback
+GET /api/events/:eventId/feedback - Get event feedback (Admin)
+GET /api/students/:studentId/feedback - Get student's feedback
+
+-Reports:
+GET /api/reports/events - Event statistics
+GET /api/reports/students - Student participation
+GET /api/reports/feedback - Feedback analysis
+
+**4. Workflows**
+Registration Flow:
+sequenceDiagram
+    participant Student
+    participant Frontend
+    participant Backend
+    participant Database
+
+    Student->>Frontend: Browse events
+    Frontend->>Backend: GET /api/events
+    Backend->>Database: Query events
+    Database-->>Backend: Return events
+    Backend-->>Frontend: Return events
+    Frontend->>Student: Display events
+    
+    Student->>Frontend: Select event & register
+    Frontend->>Backend: POST /api/events/:id/register
+    Backend->>Database: Check capacity
+    Database-->>Backend: Available slots
+    Backend->>Database: Create registration
+    Database-->>Backend: Confirmation
+    Backend-->>Frontend: Success response
+    Frontend->>Student: Show registration confirmation
+    
+Attendance Flow:
+sequenceDiagram
+    participant Student
+    participant Admin
+    participant Frontend
+    participant Backend
+    participant Database
+
+    Student->>Frontend: Show QR code
+    Admin->>Frontend: Scan QR code
+    Frontend->>Backend: POST /api/events/:id/check-in
+    Backend->>Database: Verify registration
+    Database-->>Backend: Registration details
+    Backend->>Database: Record attendance
+    Database-->>Backend: Confirmation
+    Backend-->>Frontend: Attendance confirmed
+    Frontend->>Admin: Show success message
+    Frontend->>Student: Show check-in confirmation
+    
+**5. Assumptions & Edge Cases**
+Assumptions:
+-Each event has a single organizer
+-Students can only register once per event
+-Attendance is marked at the event venue
+-Feedback can only be submitted after event completion
+
+Edge Cases Handled:
+-Duplicate Registrations
+-Scenario: Student tries to register for the same event twice
+-Handling:
+Check existing registrations before creating new one
+Return 409 Conflict if already registered
+
+Event Capacity:
+-Scenario: Event reaches maximum capacity
+-Handling:
+Show "Event Full" status
+Add to waitlist if implemented
+Reject new registrations
+
+Missing Feedback:
+-Scenario: Student attends but doesn't provide feedback
+-Handling:
+Send reminder emails
+Show pending feedback in dashboard
+Allow late submissions
+
+Cancelled Events:
+-Scenario: Event is cancelled after registrations
+-Handling:
+Notify all registered students
+Update event status
+Prevent new registrations
+Allow feedback collection for cancelled events
+
+Late Arrivals:
+-Scenario: Student arrives after check-in closes
+-Handling:
+Allow manual check-in by admin
+Mark as "Late" in attendance
+Configurable check-in window
+
+Multiple Check-ins:
+-Scenario: Student checks in multiple times
+-Handling:
+Prevent duplicate check-ins
+Log all check-in attempts
+Alert for suspicious activity
+
+## 6 Scaling Analysis for CampusEventer:
+System Scale
+Colleges: 50
+Students per college: 500
+Events per college per semester: 20
+Total students: 25,000
+Total events per semester: 1,000
+
+**1. Database Design**
+Single PostgreSQL database with proper indexing
+College-scoped unique IDs for events
+Composite indexes on (college_id, id) for efficient querying
+**2. ID Structure**
+Use UUID v7 for all primary keys
+Benefits:
+Globally unique
+Time-sortable
+No coordination needed between instances
+**3. Data Partitioning**
+Logical partitioning by college_id in application code
+Physical partitioning by college_id if table grows beyond 10M rows
+**4. API Design**
+GET /api/colleges/{collegeId}/events
+GET /api/colleges/{collegeId}/events/{eventId}
+**5. Performance Considerations**
+Read Replicas: For analytics and reporting
+Caching Layer: Redis for frequently accessed data
+Connection Pooling: To handle concurrent connections
+**6. Growth Projections**
+Year 1: 50 colleges × 20 events = 1,000 events/semester
+Year 3: 200 colleges × 20 events = 4,000 events/semester
+Storage: ~1MB/event → 4GB/year (easily manageable)
+
+AND TO ORGANIZE DATA WE CAN HAVE 2 OPTIONS :
+Option 1: Single Database with College Context:
+   ```bash
+-- Events table
+CREATE TABLE events (
+    id BIGSERIAL PRIMARY KEY,
+    college_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    -- other fields
+    UNIQUE(college_id, id)  -- For college-scoped uniqueness
+);
+   ```
+Option 2: Separate Schemas per College:
+   ```bash
+-- For each college
+CREATE SCHEMA college_1;
+CREATE TABLE college_1.events (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    -- other fields
+);
+   ```
 ## 🤝 Contributing
 
 1. Fork the repository
