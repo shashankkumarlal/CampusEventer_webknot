@@ -415,6 +415,18 @@ Frontend deployed on Netlify: https://extraordinary-monstera-c6e86e.netlify.app/
 
 Full web app (local) demo video: [Google Drive Link](https://drive.google.com/file/d/1kpeAI9BMoR6W2cX4_pNtJSA0ysqxcX6w/view?usp=sharing)
 
+
+
+
+
+
+<img width="1569" height="846" alt="image" src="https://github.com/user-attachments/assets/fd729b20-c372-46ae-afa6-1e5e66369618" />
+<img width="1579" height="786" alt="image" src="https://github.com/user-attachments/assets/84253b53-517e-4ae5-ad03-17e32e82350e" />
+<img width="1582" height="794" alt="image" src="https://github.com/user-attachments/assets/1e0692bb-8c04-4627-862a-e18235a669b2" />
+<img width="1574" height="843" alt="image" src="https://github.com/user-attachments/assets/815e2a91-a317-4dc8-9181-ac0ce713dbeb" />
+<img width="1584" height="834" alt="image" src="https://github.com/user-attachments/assets/d425350f-e036-434e-9d2b-6609aebeb5b0" />
+
+
 <div align="center"> Made with ❤️ by Shashank Kumar Lal | Reva University | SRN: R22EP052 | B.Tech ECM </div> ```
 
 
