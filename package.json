@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push",
     "lint": "eslint . --ext .ts,.tsx --ignore-path .eslintignore",
     "lint:fix": "eslint . --ext .ts,.tsx --fix --ignore-path .eslintignore",
-    "test": "vitest run",
+    "test": "vitest run --coverage --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --passWithNoTests"
